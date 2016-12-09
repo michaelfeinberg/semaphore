@@ -54,7 +54,12 @@ int main(int argc, char *argv[]){
 
         union semun message;
         message.val = 1;
-        semctl(semkey, 0, IPC_SET, message);
+        int status = semctl(semid, 0, SETVAL, message);
+        if (status == -1) {
+            printf("Error: %s\n",strerror(errno));
+            return 1;
+        }
+
         close(fd);
         printf("[*] Story created\n");
     } else if (strncmp(argv[1], "-r", strlen(argv[1])) == 0) {

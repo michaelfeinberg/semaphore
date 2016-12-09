@@ -21,7 +21,6 @@ int main(){
 
     int semid = semget(semkey, 1, IPC_CREAT | 0644);
 
-    /*
     struct sembuf sb;
     sb.sem_num = 0;
     sb.sem_flg = SEM_UNDO;
@@ -31,7 +30,6 @@ int main(){
         printf("Error: %s\n", strerror(errno));
         return 1;
     }
-    */
 
     int md = shmget(shmkey, sizeof(int), 0644);
     if (md == -1) {
@@ -66,8 +64,6 @@ int main(){
     *len = strlen(input);
     shmdt(len);
 
-    /*
     sb.sem_op = 1;
     semop(semid, &sb, 1);
-    */
 }
