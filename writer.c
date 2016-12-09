@@ -20,13 +20,16 @@ int main(){
     int shmkey = ftok("control.c", 12);
 
     int semid = semget(semkey, 1, IPC_CREAT | 0644);
+    if (semid == -1) {
+        printf("Error: %s\n", strerror(errno));
+        return 1;
+    }
 
     struct sembuf sb;
     sb.sem_num = 0;
     sb.sem_flg = SEM_UNDO;
     sb.sem_op = -1;
-    int status = semop(semid, &sb, 1);
-    if (status == -1) {
+    if (semop(semid, &sb, 1) == -1) {
         printf("Error: %s\n", strerror(errno));
         return 1;
     }

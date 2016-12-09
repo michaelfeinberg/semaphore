@@ -11,6 +11,9 @@
 
 void print_file(char *file) {
     FILE *f = fopen(file, "r");
+    if (!f) {
+        return;
+    }
     char input[256];
     while (fgets(input, sizeof(input), f)) {
         printf("%s", input);
@@ -54,8 +57,7 @@ int main(int argc, char *argv[]){
 
         union semun message;
         message.val = 1;
-        int status = semctl(semid, 0, SETVAL, message);
-        if (status == -1) {
+        if (semctl(semid, 0, SETVAL, message) == -1) {
             printf("Error: %s\n",strerror(errno));
             return 1;
         }
@@ -63,11 +65,22 @@ int main(int argc, char *argv[]){
         close(fd);
         printf("[*] Story created\n");
     } else if (strncmp(argv[1], "-r", strlen(argv[1])) == 0) {
-        semctl(semid, 0, IPC_RMID);
+        if (semctl(semid, 0, IPC_RMID) == -1) {
+            printf("Error: %s\n",strerror(errno));
+            return 1;
+        }
 
         int md = shmget(shmkey,sizeof(int), 0);
+        if (md == -1) {
+            printf("Error: %s\n",strerror(errno));
+            return 1;
+        }
+
         struct shmid_ds buf;
-        shmctl(md, IPC_RMID, &buf);
+        if (shmctl(md, IPC_RMID, &buf) == -1) {
+            printf("Error: %s\n",strerror(errno));
+            return 1;
+        }
         print_file("story");
         printf("[*] Story removed\n");
     } else if (strncmp(argv[1], "-v", strlen(argv[1])) == 0) {
