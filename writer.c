@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <errno.h>
 
 union semun{
     int val;
@@ -19,17 +20,41 @@ int main(){
     int shmkey = ftok("control.c", 12);
 
     int semid = semget(semkey, 1, IPC_CREAT | 0644);
-    union semun data;
-    semctl(semid, 0, -1, data);
+
+    /*
+    struct sembuf sb;
+    sb.sem_num = 0;
+    sb.sem_flg = SEM_UNDO;
+    sb.sem_op = -1;
+    int status = semop(semid, &sb, 1);
+    if (status == -1) {
+        printf("Error: %s\n", strerror(errno));
+        return 1;
+    }
+    */
 
     int md = shmget(shmkey, sizeof(int), 0644);
+    if (md == -1) {
+        printf("Error: %s\n", strerror(errno));
+        return 1;
+    }
+
     int *len = shmat(md, 0, 0);
+    if (*len == -1) {
+        printf("Error: %s\n", strerror(errno));
+        return 1;
+    }
 
     int fd = open("story", O_CREAT | O_RDWR | O_APPEND, 0644);
+    if (fd == -1) {
+        printf("Error: %s\n", strerror(errno));
+        return 1;
+    }
+
     lseek(fd, -(*len), SEEK_END);
     char *buf = (char *) malloc(*len + 1);
 
-    read(fd, buf, sizeof(buf));
+    read(fd, buf, *len);
     printf("%s", buf);
 
     printf("What is the next line? ");
@@ -40,4 +65,9 @@ int main(){
     close(fd);
     *len = strlen(input);
     shmdt(len);
+
+    /*
+    sb.sem_op = 1;
+    semop(semid, &sb, 1);
+    */
 }

@@ -28,39 +28,45 @@ union semun{
 
 int main(int argc, char *argv[]){
     if (argc < 2) {
-        return 0;
+        return 1;
     }
-    int semid;
     int semkey = ftok("Makefile" , 22);
     int shmkey = ftok("control.c", 12);
-    int sc;
-    if (strncmp(argv[1], "-c", strlen(argv[1])) == 0){
+
+    int semid = semget(semkey, 1, IPC_CREAT | 0644);
+    if (semid == -1) {
+        printf("Error: %s\n",strerror(errno));
+        return 1;
+    }
+
+    if (strncmp(argv[1], "-c", strlen(argv[1])) == 0) {
         int md = shmget(shmkey, sizeof(int), IPC_CREAT | IPC_EXCL | 0644);
-        if(md == -1){
-            printf("error : %s\n",strerror(errno));
+        if (md == -1) {
+            printf("Error: %s\n",strerror(errno));
+            return 1;
         }
 
-        int fd = open("story", O_CREAT | O_EXCL | O_TRUNC, 0644);
-        semid = semget(semkey, 1, IPC_CREAT | IPC_EXCL| 0644);
-        printf("semaphore created: %d\n", semid);
+        int fd = open("story", O_CREAT | O_TRUNC, 0644);
+        if (fd == -1) {
+            printf("Error: %s\n",strerror(errno));
+            return 1;
+        }
+
         union semun message;
         message.val = 1;
         semctl(semkey, 0, IPC_SET, message);
         close(fd);
-    }
-    else if(strncmp(argv[1], "-r", strlen(argv[1])) == 0){
-        semctl(semkey, 0, IPC_RMID);
-        semid = semget(semkey, 1, 0);
-        sc = semctl(semid, 0, IPC_RMID);
-        printf("semaphore removed: %d\n", sc);
+        printf("[*] Story created\n");
+    } else if (strncmp(argv[1], "-r", strlen(argv[1])) == 0) {
+        semctl(semid, 0, IPC_RMID);
 
         int md = shmget(shmkey,sizeof(int), 0);
         struct shmid_ds buf;
         shmctl(md, IPC_RMID, &buf);
         print_file("story");
+        printf("[*] Story removed\n");
     } else if (strncmp(argv[1], "-v", strlen(argv[1])) == 0) {
         print_file("story");
     }
     return 0;
-
 }
