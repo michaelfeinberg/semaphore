@@ -53,7 +53,7 @@ int main(){
     }
 
     lseek(fd, -(*len), SEEK_END);
-    char *buf = (char *) malloc(*len + 1);
+    char *buf = (char *) calloc(*len + 1, sizeof(char));
 
     read(fd, buf, *len);
     printf("%s", buf);
